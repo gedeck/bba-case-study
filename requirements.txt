@@ -1,0 +1,8 @@
+mistat
+jupyterlab
+matplotlib
+pandas
+patsy
+seaborn
+statsmodels
+pingouin

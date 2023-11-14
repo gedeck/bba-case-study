@@ -1,6 +1,4 @@
 import itertools
-import re
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import mistat
@@ -10,35 +8,8 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from mistat.design import doe
 from scipy import stats
-from PyPDF2 import PdfMerger
-
-data_dir = Path(__file__).parent / 'data'
-FIGURES_DIR = Path(__file__).parents[1] / 'figures'
-FIGURES_DIR.mkdir(exist_ok=True)
-TABLES_DIR = Path(__file__).parents[1] / 'tables'
-TABLES_DIR.mkdir(exist_ok=True)
 
 NREPEATS_DEFAULT = 100
-
-
-def saveTable(filename, latex):
-    tex_file = TABLES_DIR / filename
-    tex_file.write_text(latex.replace('%', '\\%'))
-
-
-def saveFigure(filename):
-    pdf_file = FIGURES_DIR / filename
-    if filename.endswith('png'):
-        plt.savefig(pdf_file, format="png", bbox_inches="tight", dpi=600)
-        return
-    plt.savefig(pdf_file, format="pdf", bbox_inches="tight")
-    writer = PdfMerger()
-    content = pdf_file.read_bytes()
-    content = re.sub(br'\/CreationDate \(D:\d+\D*\)',
-                     b'/CreationDate (D:20230823000000Z)', content)
-    content = re.sub(br'\/ModDate \(D:\d+\D*\)',
-                     b'/ModDate (D:20230823000000Z)', content)
-    pdf_file.write_bytes(content)
 
 
 def preparePistonDataset() -> pd.DataFrame:
@@ -65,12 +36,6 @@ def preparePistonDataset() -> pd.DataFrame:
               for factor, values in factors.items()}
     unit = {factor: 0.5 * (max(values) - min(values))
             for factor, values in factors.items()}
-
-    # define helper function to convert code co-ordinates to factor co-ordinates
-    def toFactor(code, codeValue):
-        ''' convert code to factor co-ordinates '''
-        factor = x2factor[code]
-        return center[factor] + codeValue * unit[factor]
 
     # add code levels to table
     for c in factors:
@@ -122,26 +87,16 @@ def wildBootstrapAnalysis(df: pd.DataFrame, formula: str, nrepeats: int = NREPEA
     return pd.DataFrame(results)
 
 
-# def nullFactorAnalysis(df: pd.DataFrame, formula: str, nrepeats: int = 100) -> pd.DataFrame:
-#     df = df.copy()
-#     results = []
-#     formula = f'{formula} + null'
-#     for _ in range(nrepeats):
-#         df['null'] = stats.norm.rvs(loc=0, scale=1, size=len(df))
-#         results.append(buildModel(df, formula).params)
-#     return pd.DataFrame(results)
-
-
 def createParametricBootstrapSample(df: pd.DataFrame, outcome: str, rng=None):
     df = df.copy()
     y = df[outcome]
-    df[outcome] = stats.norm.rvs(loc=np.mean(
-        y), scale=np.std(y), size=len(y), random_state=rng)
+    df[outcome] = stats.norm.rvs(loc=np.mean(y), scale=np.std(y), size=len(y), random_state=rng)
     return df
 
 
-def parametricBefittingBootstrapAnalysis(df: pd.DataFrame, formula: str, group: list[str], nrepeats: int = NREPEATS_DEFAULT) -> pd.DataFrame:
-    rng = np.random.default_rng(seed=123)
+def parametricBefittingBootstrapAnalysis(df: pd.DataFrame, formula: str, group: list[str], nrepeats: int = NREPEATS_DEFAULT,
+                                         seed: int = 123) -> pd.DataFrame:
+    rng = np.random.default_rng(seed=seed)
     outcome = formula.split('~')[0].strip()
     return pd.DataFrame([buildModel(df.groupby(group).apply(createParametricBootstrapSample, outcome=outcome, rng=rng), formula).params
                          for _ in range(nrepeats)])
@@ -151,12 +106,10 @@ def plot_coefficients(ols_model, bba_samples, ba_samples, pbba_samples, pba_samp
     terms = list(ols_model.params.index)
     if len(terms) > ncols:
         nrows = (len(terms) - 1) // ncols + 1
-        fig, axes = plt.subplots(
-            ncols=ncols, nrows=nrows, figsize=[16 * ncols / 6, 3 * nrows])
+        fig, axes = plt.subplots(ncols=ncols, nrows=nrows, figsize=[16 * ncols / 6, 3 * nrows])
         axes = itertools.chain(*axes)
     else:
-        fig, axes = plt.subplots(ncols=ncols, nrows=1,
-                                 figsize=[16 * ncols / 6, 3])
+        fig, axes = plt.subplots(ncols=ncols, nrows=1, figsize=[16 * ncols / 6, 3])
 
     for ax, term in itertools.zip_longest(axes, terms):
         if term is None:
