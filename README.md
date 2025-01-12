@@ -6,4 +6,4 @@ This repository contains the code to reproduce the results of the paper:
 - Jupyter notebook `notebooks/Piston simulator.ipynb` reproduces the results of the piston simulator case study.
 - `notebooks/common.py` contains utility functions. In particular it contains the code that implements the various bootstrap approaches discussed in the paper.
 
-The `requirements.txt` file contains the list of Python package dependencies. The code was tested with Python 3.11.
+The `requirements.txt` file contains the list of Python package dependencies. The code was tested with Python 3.12.

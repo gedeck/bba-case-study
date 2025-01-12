@@ -106,10 +106,10 @@ def plot_coefficients(ols_model, bba_samples, ba_samples, pbba_samples, pba_samp
     terms = list(ols_model.params.index)
     if len(terms) > ncols:
         nrows = (len(terms) - 1) // ncols + 1
-        fig, axes = plt.subplots(ncols=ncols, nrows=nrows, figsize=[16 * ncols / 6, 3 * nrows])
+        fig, axes = plt.subplots(ncols=ncols, nrows=nrows, figsize=[20 * ncols / 6, 4 * nrows])
         axes = itertools.chain(*axes)
     else:
-        fig, axes = plt.subplots(ncols=ncols, nrows=1, figsize=[16 * ncols / 6, 3])
+        fig, axes = plt.subplots(ncols=ncols, nrows=1, figsize=[20 * ncols / 6, 4])
 
     for ax, term in itertools.zip_longest(axes, terms):
         if term is None:
@@ -139,13 +139,17 @@ def plot_coefficients(ols_model, bba_samples, ba_samples, pbba_samples, pba_samp
         sample_distributions(wba_samples[term], ax, 5)
         sample_distributions(wba_samples[term], ax, 5)
 
-        ax.set_title(term)
+        ax.set_title(term, fontsize=20)
         ax.get_yaxis().set_visible(False)
         ax.set_xticks([0, 1, 2, 3, 4, 5], [
                       'OLS', 'BBA', 'BA', 'pBBA', 'pBA', 'wBA'])
+        labels = ax.get_xticklabels()
+        for i, label in enumerate(labels):
+            if i % 2 == 1:
+                label.set_y(label.get_position()[1] - 0.025)  # Adjust the shift value as needed
         ax.set_xlim(-0.5, 5.5)
+        ax.tick_params(axis='both', which='major', labelsize=16)
         ax.axhline(0)
-
 
 def plot_std_coefficients(ols_model, bba_samples, ba_samples, pbba_samples, pba_samples,
                           wba_samples, ax=None):
