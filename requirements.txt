@@ -6,3 +6,5 @@ patsy
 seaborn
 statsmodels
 pingouin
+
+tqdm
